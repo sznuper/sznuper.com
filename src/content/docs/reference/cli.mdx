@@ -1,0 +1,52 @@
+---
+title: CLI Reference
+description: sznuper command-line interface reference.
+---
+
+## Global flags
+
+| Flag | Description |
+|---|---|
+| `--config <path>` | Path to config file (default: `~/.config/sznuper/config.yml` or `/etc/sznuper/config.yml`) |
+| `-v, --verbose` | Enable debug logging |
+
+## Commands
+
+### `sznuper start`
+
+Start the daemon. Runs healthchecks on their configured schedules and sends notifications.
+
+| Flag | Description |
+|---|---|
+| `--dry-run` | Simulate alerts without sending notifications |
+
+### `sznuper init`
+
+Generate a config file. Launches an interactive TUI by default.
+
+| Flag | Description |
+|---|---|
+| `--from <path\|url>` | Base config to start from |
+| `--add-service <name:url>` | Add a notification service (non-interactive mode, repeatable) |
+| `--force` | Overwrite existing config |
+| `-o, --output <path>` | Output path (overrides default location) |
+
+### `sznuper run [alert_name]`
+
+Run alerts once and exit. Runs all alerts if no name is given.
+
+| Flag | Description |
+|---|---|
+| `--dry-run` | Simulate without sending notifications |
+
+### `sznuper validate`
+
+Validate the config file and verify all healthchecks are reachable.
+
+### `sznuper version`
+
+Print version information.
+
+### `sznuper hash <file>`
+
+Print the SHA-256 hash of a file. Useful for pinning healthcheck integrity in config.

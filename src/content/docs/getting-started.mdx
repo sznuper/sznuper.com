@@ -1,6 +1,84 @@
 ---
 title: Getting Started
-description: Get started with sznuper.
+description: Install sznuper and start monitoring your server in minutes.
 ---
 
-Placeholder — docs content will be added here.
+## Prerequisites
+
+- Linux (amd64 or arm64)
+- `curl`
+
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sznuper/dist/main/install.sh | sh
+```
+
+To pin a specific version:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sznuper/dist/main/install.sh | VERSION=v0.11.0 sh
+```
+
+The script installs the binary and, when run as root, sets up a systemd service.
+
+| | Root | Non-root |
+|---|---|---|
+| Binary | `/usr/local/bin/sznuper` | `~/.local/bin/sznuper` |
+| Config | `/etc/sznuper/config.yml` | `~/.config/sznuper/config.yml` |
+
+## Initialize
+
+Generate a config file interactively:
+
+```sh
+sznuper init
+```
+
+This walks you through adding notification services and generates a config with sensible defaults, including healthchecks for disk usage, CPU, memory, and SSH events (where supported).
+
+To skip the TUI and add services directly:
+
+```sh
+sznuper init --add-service "telegram:telegram://${TELEGRAM_TOKEN}@telegram?chats=${CHAT_ID}"
+```
+
+Use `--from` to base your config on a URL or local file, and `--force` to overwrite an existing config.
+
+## Start
+
+As a systemd service (root install):
+
+```sh
+sudo systemctl enable --now sznuper
+```
+
+Or run directly:
+
+```sh
+sznuper start
+```
+
+Use `--dry-run` to simulate without sending notifications.
+
+## Validate
+
+Check your config and verify all healthchecks are reachable:
+
+```sh
+sznuper validate
+```
+
+## Run once
+
+Test a specific alert without starting the daemon:
+
+```sh
+sznuper run my-alert --dry-run
+```
+
+Or run all alerts once:
+
+```sh
+sznuper run
+```

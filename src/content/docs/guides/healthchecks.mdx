@@ -1,0 +1,48 @@
+---
+title: Healthchecks
+description: Overview of sznuper's official healthchecks.
+---
+
+sznuper runs healthchecks as standalone executables. The official healthchecks are written in C and compiled with [Cosmopolitan Libc](https://justine.lol/cosmopolitan/) - single portable binaries that run on any Linux (amd64/arm64) with zero dependencies.
+
+## Official healthchecks
+
+| Healthcheck | Trigger | What it monitors |
+|---|---|---|
+| **disk_usage** | interval | Disk space for a mount point |
+| **cpu_usage** | interval | CPU utilization via `/proc/stat` sampling |
+| **memory_usage** | interval | Memory and swap via `/proc/meminfo` |
+| **ssh_journal** | pipe | SSH login, logout, and failure events from journald |
+
+When you run `sznuper init`, relevant healthchecks are automatically included based on your system. For example, `memory_usage` and `cpu_usage` are added when `/proc/meminfo` and `/proc/stat` exist, and `ssh_journal` when `journalctl` is available.
+
+## Healthcheck interface
+
+A healthcheck is any executable that:
+
+1. Reads configuration from `HEALTHCHECK_ARG_*` environment variables
+2. Writes events to stdout in this format:
+
+```
+--- event
+type=ok
+usage_percent=42
+total=50G
+```
+
+Each event block starts with `--- event` and contains `key=value` pairs. The `type` field is required. Empty output (zero events) is valid.
+
+Exit code `0` means the healthcheck ran successfully. A non-zero exit code means the healthcheck itself is broken. sznuper logs the error but does not notify.
+
+## Remote healthchecks
+
+Healthchecks can be loaded from URLs. sznuper downloads, caches, and verifies them with SHA-256:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/disk_usage
+    sha256: abc123...
+```
+
+Use `sznuper hash <file>` to get the hash of a healthcheck binary.
