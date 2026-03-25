@@ -17,6 +17,9 @@ importers:
       sharp:
         specifier: 0.34.2
         version: 0.34.2
+      starlight-contextual-menu:
+        specifier: 0.1.5
+        version: 0.1.5(astro@6.0.1(@types/node@24.12.0)(rollup@4.60.0))(starlight-markdown@0.1.5(astro@6.0.1(@types/node@24.12.0)(rollup@4.60.0)))
 
 packages:
 
@@ -1527,6 +1530,17 @@ packages:
 
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
+
+  starlight-contextual-menu@0.1.5:
+    resolution: {integrity: sha512-MYQ6eFDIBBnKrEh3XqR7RZ6YDJ641ADmrSjj93d+cVJGPvrCHrd6VYiKeehhczsrn6GqjaCCFAn4xUd69gcfcQ==}
+    peerDependencies:
+      astro: ^5.0.0
+      starlight-markdown: ^0.1.5
+
+  starlight-markdown@0.1.5:
+    resolution: {integrity: sha512-23LXRaZp7pyE+r/HP6rxHfwic8HfvUBT4EImECA6encs/eTtrF0Z+7svANofdtfbiNt31D5q26i03B6FtcSmGg==}
+    peerDependencies:
+      astro: ^5.0.0
 
   stream-replace-string@2.0.0:
     resolution: {integrity: sha512-TlnjJ1C0QrmxRNrON00JvaFFlNh5TTG00APw23j74ET7gkQpTASi6/L2fuiav8pzK715HXtUeClpBTw2NPSn6w==}
@@ -3867,6 +3881,15 @@ snapshots:
   source-map@0.7.6: {}
 
   space-separated-tokens@2.0.2: {}
+
+  starlight-contextual-menu@0.1.5(astro@6.0.1(@types/node@24.12.0)(rollup@4.60.0))(starlight-markdown@0.1.5(astro@6.0.1(@types/node@24.12.0)(rollup@4.60.0))):
+    dependencies:
+      astro: 6.0.1(@types/node@24.12.0)(rollup@4.60.0)
+      starlight-markdown: 0.1.5(astro@6.0.1(@types/node@24.12.0)(rollup@4.60.0))
+
+  starlight-markdown@0.1.5(astro@6.0.1(@types/node@24.12.0)(rollup@4.60.0)):
+    dependencies:
+      astro: 6.0.1(@types/node@24.12.0)(rollup@4.60.0)
 
   stream-replace-string@2.0.0: {}
 
