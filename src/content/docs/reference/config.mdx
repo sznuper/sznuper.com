@@ -1,0 +1,279 @@
+---
+title: Config File
+description: sznuper configuration file reference.
+---
+
+sznuper uses a single YAML config file. By default it looks for:
+
+- `~/.config/sznuper/config.yml` (as user)
+- `/etc/sznuper/config.yml` (as root)
+
+Override with `--config <path>`. Environment variables are supported anywhere in the file using `${VAR_NAME}` syntax.
+
+The config has four top-level sections:
+
+## `options`
+
+Paths for healthcheck storage, caching, and logs.
+
+```yaml
+options:
+  healthchecks_dir: /etc/sznuper/healthchecks
+  cache_dir: /var/cache/sznuper
+  logs_dir: /var/log/sznuper
+```
+
+All fields are optional. Defaults depend on whether sznuper runs as root or user.
+
+| Field | Root default | User default |
+|---|---|---|
+| `healthchecks_dir` | `/etc/sznuper/healthchecks` | `~/.config/sznuper/healthchecks` |
+| `cache_dir` | `/var/cache/sznuper` | `~/.cache/sznuper` |
+| `logs_dir` | `/var/log/sznuper` | `~/.local/state/sznuper/logs` |
+
+## `globals`
+
+Arbitrary key-value pairs accessible in notification templates. Useful for shared values like hostname.
+
+```yaml
+globals:
+  hostname: my-server
+  environment: production
+```
+
+## `services`
+
+Notification services using [Shoutrrr](https://shoutrrr.nickfedor.com/v0.14.1/services/overview/) URLs. Each service has a name, a URL, and optional default params.
+
+The service name is arbitrary - it's just a label you use to reference it later in alerts. You can have multiple services of the same type with different names:
+
+```yaml
+services:
+  telegram-ops:
+    url: telegram://${TELEGRAM_TOKEN}@telegram
+    params:
+      chats: ${OPS_CHAT_ID}
+  telegram-alerts:
+    url: telegram://${TELEGRAM_TOKEN}@telegram
+    params:
+      chats: ${ALERTS_CHAT_ID}
+  discord:
+    url: discord://${DISCORD_TOKEN}@${DISCORD_WEBHOOK_ID}
+```
+
+Then reference them by name in your alerts:
+
+```yaml
+alerts:
+  - name: disk
+    ...
+    notify:
+      - telegram-ops
+      - discord
+```
+
+## `alerts`
+
+A list of alerts. Each alert defines what to check, when to check it, and who to notify. Example:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/disk_usage
+    sha256: abc123...
+    triggers:
+      - interval: "5m"
+    timeout: "30s"
+    args:
+      mount: /
+      threshold_warn_percent: 80
+      threshold_crit_percent: 95
+    template: "Disk usage on {{globals.hostname}}: {{event.usage_percent}}%"
+    cooldown: "1h"
+    notify:
+      - telegram
+```
+
+### Alert fields
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | yes | Unique name for this alert |
+| `healthcheck` | yes | URI of the healthcheck (`file://`, `https://`, or `builtin://`) |
+| `sha256` | no | SHA-256 hash for remote healthchecks, or `false` to skip verification |
+| `triggers` | no | List of triggers (see below) |
+| `timeout` | no | Max execution time (e.g. `"30s"`) |
+| `args` | no | Key-value arguments passed as `HEALTHCHECK_ARG_*` env vars |
+| `side_effects` | no | Shell commands to run after event processing |
+| `template` | yes | Go template for the notification message (see below) |
+| `cooldown` | no | Suppress repeated notifications (e.g. `"5m"`, `"1h"`) |
+| `notify` | yes | List of services to notify |
+| `events` | no | Per-event-type configuration (see below) |
+
+### Triggers
+
+A list of triggers. Each alert can have multiple triggers and they all run independently. Example:
+
+```yaml
+triggers:
+  - interval: "5m"
+  - cron: "0 9 * * 1"
+  - cron: "0 18 * * *"
+```
+
+This alert would run every 5 minutes, every Monday at 9am, and every day at 6pm.
+
+Available trigger types:
+
+| Type | Description |
+|---|---|
+| `interval` | Run on a fixed interval (e.g. `"5m"`, `"30s"`) |
+| `cron` | Cron expression, 5 or 6 fields (e.g. `"0 9 * * *"`) |
+| `watch` | Run when a file changes (e.g. `/var/log/app.log`) |
+| `pipe` | Continuous shell command whose stdout is fed to the healthcheck (e.g. `"tail -F /var/log/app.log"`) |
+| `lifecycle` | Special trigger that fires on daemon start and stop. Only works with the `builtin://lifecycle` healthcheck. |
+
+### Templates
+
+Templates use Go's [text/template](https://pkg.go.dev/text/template) syntax with [Sprig](https://masterminds.github.io/sprig/) functions. Four scopes are available:
+
+| Scope | Description |
+|---|---|
+| `event` | Fields from the healthcheck output (e.g. `{{event.type}}`, `{{event.usage_percent}}`) |
+| `globals` | Values from the `globals` config section (e.g. `{{globals.hostname}}`) |
+| `alert` | Alert metadata (e.g. `{{alert.name}}`) |
+| `args` | Arguments from the alert's `args` field (e.g. `{{args.mount}}`) |
+
+Example:
+
+```yaml
+template: |-
+  [{{event.type | upper}}] {{globals.hostname}}:
+  Disk {{args.mount}} at {{event.usage_percent}}% ({{event.available}} remaining)
+```
+
+### Notify targets
+
+A list of services to notify. In the simplest form, just the service name:
+
+```yaml
+notify:
+  - telegram
+  - discord
+```
+
+You can also override params per notification. The params are merged on top of the service's base params - any key you set here wins over the service default. Params are passed as query parameters in the Shoutrrr URL.
+
+```yaml
+notify:
+  - telegram
+  - telegram:
+      params:
+        chats: ${ANOTHER_CHAT_ID}    # override the default chat
+        notification: "false"         # send silently
+  - discord:
+      params:
+        username: sznuper-bot
+        avatar_url: https://example.com/avatar.png
+```
+
+This sends to the default telegram chat, a second telegram chat silently, and discord with a custom bot name and avatar.
+
+### Events
+
+Each alert has `template`, `notify`, and optionally `cooldown` that apply to all event types by default. The `events` section lets you override these per event type.
+
+| Field | Description |
+|---|---|
+| `healthy` | List of event types considered healthy. When sznuper sees a healthy event after unhealthy ones, it resets cooldowns. |
+| `on_unmatched` | What to do with event types not listed in `override`: `"notify"` (default) or `"drop"`. |
+| `override` | Per-event-type overrides for `template`, `cooldown`, and `notify`. |
+
+For example, say you have a disk usage alert with a default cooldown of `"1h"` and a simple template. But for `critical_usage` events you want a more urgent message, a shorter cooldown, and to also notify discord:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: ...
+    triggers:
+      - interval: "5m"
+    template: |-
+      [{{event.type | upper}}] {{globals.hostname}}:
+      Disk at {{event.usage_percent}}%
+    cooldown: "1h"
+    notify:
+      - telegram
+    events:
+      healthy:
+        - ok
+      on_unmatched: notify
+      override:
+        critical_usage:
+          template: |-
+            CRITICAL: {{globals.hostname}} disk at {{event.usage_percent}}%!
+            Only {{event.available}} remaining on {{args.mount}}
+          cooldown: "5m"
+          notify:
+            - telegram
+            - discord
+```
+
+Here, `ok` and `high_usage` events use the alert-level defaults (1h cooldown, telegram only). But `critical_usage` gets its own template, a 5m cooldown, and notifies both telegram and discord.
+
+## Example config
+
+```yaml
+options:
+  healthchecks_dir: /etc/sznuper/healthchecks
+  cache_dir: /var/cache/sznuper
+  logs_dir: /var/log/sznuper
+
+globals:
+  hostname: my-server
+
+services:
+  telegram:
+    url: telegram://${TELEGRAM_TOKEN}@telegram
+    params:
+      chats: ${TELEGRAM_CHAT_ID}
+
+alerts:
+  - name: disk
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/disk_usage
+    sha256: abc123...
+    triggers:
+      - interval: "10m"
+    args:
+      mount: /
+      threshold_warn_percent: 80
+      threshold_crit_percent: 95
+    template: |-
+      Disk usage on {{globals.hostname}}
+      Mount: {{event.mount}}
+      Usage: {{event.usage_percent}}%
+      Available: {{event.available}}
+    cooldown: "1h"
+    notify:
+      - telegram
+    events:
+      healthy:
+        - ok
+
+  - name: ssh
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/ssh_journal
+    sha256: abc123...
+    triggers:
+      - pipe: "journalctl -fu sshd --output=json"
+    template: |-
+      SSH {{event.type}} on {{globals.hostname}}
+      User: {{event.user}}
+      Host: {{event.host}}
+    notify:
+      - telegram
+    events:
+      override:
+        login:
+          cooldown: "0"
+        failure:
+          cooldown: "5m"
+```

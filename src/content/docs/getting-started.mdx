@@ -1,6 +1,109 @@
 ---
 title: Getting Started
-description: Get started with sznuper.
+description: Install sznuper and start monitoring your server in minutes.
 ---
 
-Placeholder — docs content will be added here.
+## What is sznuper?
+
+sznuper (/ˈʂnu.pɛr/) is a lightweight server monitor for Linux. It runs healthchecks on a schedule and sends notifications when something needs attention - to Discord, Slack, Telegram, Teams, email, and more.
+
+The name comes from the Silesian word [sznupać](https://en.wiktionary.org/wiki/sznupa%C4%87#Silesian) - to sniff, to poke around, to rummage. A sznuper is someone who sticks their nose where it doesn't belong and won't stop bothering you about what they found.
+
+sznuper itself is a dumb binary. It doesn't know what it's monitoring. It just runs executables or scripts (healthchecks), reads their output, and routes notifications. Running `sznuper init` sets up a config with official healthchecks as defaults, but they're fetched remotely on first run just like any other healthcheck. You can replace them with your own in any language.
+
+## Why sznuper?
+
+There's no good unified solution for "tell me when something goes wrong on my VPS". Most sysadmins end up with a pile of cron jobs, custom scripts calling raw APIs, or cobbling together shell one-liners. On the other end of the spectrum, tools like Grafana, Prometheus, or Zabbix require multiple services just to send a notification when disk is full - overkill for a simple VPS.
+
+sznuper fills the gap:
+
+- **Just a binary.** No runtime, no database, no systemd required. Runs on any Linux.
+- **Expands on cron jobs.** Built-in support for interval, cron, file watch, and pipe triggers - a single alert can run on multiple triggers at once.
+- **Versatile.** Use official healthchecks or write your own in any language.
+- **Unified notifications.** One config for Discord, Slack, Telegram, Teams, email, webhooks, and more.
+
+## Prerequisites
+
+- Linux (amd64 or arm64)
+- `curl`
+
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sznuper/dist/main/install.sh | sh
+```
+
+To pin a specific version:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sznuper/dist/main/install.sh | VERSION=v0.11.0 sh
+```
+
+The script installs the binary and, when run as root, sets up a systemd service.
+
+| | Root | Non-root |
+|---|---|---|
+| Binary | `/usr/local/bin/sznuper` | `~/.local/bin/sznuper` |
+| Config | `/etc/sznuper/config.yml` | `~/.config/sznuper/config.yml` |
+
+## Initialize
+
+Generate a config file interactively:
+
+```sh
+sznuper init
+```
+
+This walks you through adding notification services and generates a config with sensible defaults, including healthchecks for disk usage, CPU, memory, and SSH events (where supported).
+
+To skip the TUI and add services directly:
+
+```sh
+sznuper init --add-service "telegram:telegram://${TELEGRAM_TOKEN}@telegram?chats=${CHAT_ID}"
+```
+
+Use `--from` to base your config on a URL or local file, and `--force` to overwrite an existing config.
+
+## Start
+
+The install script already enables the systemd service, so if you had a config before installing, sznuper is already running. After running `sznuper init`, restart the service to pick up the new config:
+
+```sh
+sudo systemctl restart sznuper
+```
+
+Or run directly without systemd:
+
+```sh
+sznuper start
+```
+
+Use `--dry-run` to simulate without sending notifications.
+
+## Validate
+
+Check your config and verify all healthchecks are reachable:
+
+```sh
+sznuper validate
+```
+
+## Run once
+
+Test a specific alert without starting the daemon:
+
+```sh
+sznuper run my-alert --dry-run
+```
+
+Or run all alerts once:
+
+```sh
+sznuper run
+```
+
+## How does it work?
+
+Simplified overview of the sznuper daemon lifecycle:
+
+![sznuper lifecycle](/lifecycle.svg)

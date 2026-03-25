@@ -1,1 +1,6 @@
 /* Starlight theme overrides */
+
+:root {
+	--sl-content-width: 55rem;
+	--sl-sidebar-width: 15rem;
+}

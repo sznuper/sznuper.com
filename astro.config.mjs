@@ -1,12 +1,16 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightContextualMenu from 'starlight-contextual-menu';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://sznuper.com',
 	integrations: [
 		starlight({
+			plugins: [starlightContextualMenu({
+				actions: ['copy', 'view', 'chatgpt', 'claude'],
+			})],
 			title: 'sznuper',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/sznuper/sznuper' },
@@ -17,14 +21,10 @@ export default defineConfig({
 			},
 			sidebar: [
 				{
-					label: 'Getting Started',
+					label: 'Start Here',
 					items: [
-						{ label: 'Introduction', slug: 'getting-started' },
+						{ label: 'Getting Started', slug: 'getting-started' },
 					],
-				},
-				{
-					label: 'Guides',
-					autogenerate: { directory: 'guides' },
 				},
 				{
 					label: 'Reference',

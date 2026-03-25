@@ -1,0 +1,122 @@
+---
+title: Healthchecks
+description: Overview of sznuper's official healthchecks.
+---
+
+Healthchecks are executables or scripts that sznuper runs to check the state of your server. Each healthcheck outputs events to stdout, and sznuper decides whether to send notifications based on those events. Healthchecks can be built-in, loaded from the filesystem, or downloaded from a URL.
+
+sznuper itself is a dumb runner - it doesn't know anything about what it's monitoring. All the logic lives in the healthchecks. You can write your own in any language you want, as long as it's executable and follows the output format.
+
+## Built-in healthchecks
+
+sznuper includes two built-in healthchecks that run without spawning a process:
+
+| Healthcheck | Description |
+|---|---|
+| `builtin://lifecycle` | Emits a synthetic event with a configurable `event` param. Used internally by the `lifecycle` trigger to fire `started` and `stopped` events. |
+| `builtin://ok` | Always emits a single `type=ok` event. Useful for testing notification delivery or as a cron trigger that always fires. |
+
+## Official healthchecks
+
+While sznuper itself doesn't ship with any monitoring logic, it provides a set of official healthchecks that cover common server monitoring needs. These are automatically bootstrapped when you run `sznuper init`, so things work out-of-the-box. You're free to not use them and write your own instead.
+
+The official healthchecks are written in C and compiled with [Cosmopolitan Libc](https://justine.lol/cosmopolitan/) - single portable binaries that run on any Linux (amd64/arm64) with zero dependencies.
+
+| Healthcheck | Trigger | What it monitors | Bootstrapped when |
+|---|---|---|---|
+| [**disk_usage**](https://github.com/sznuper/healthchecks/blob/main/src/disk_usage.c) | interval | Disk space for a mount point | Always |
+| [**cpu_usage**](https://github.com/sznuper/healthchecks/blob/main/src/cpu_usage.c) | interval | CPU utilization via `/proc/stat` sampling | `/proc/stat` exists |
+| [**memory_usage**](https://github.com/sznuper/healthchecks/blob/main/src/memory_usage.c) | interval | Memory and swap via `/proc/meminfo` | `/proc/meminfo` exists |
+| [**ssh_journal**](https://github.com/sznuper/healthchecks/blob/main/src/ssh_journal.c) | pipe | SSH login, logout, and failure events from journald | `journalctl` is available |
+
+## Healthcheck interface
+
+A healthcheck is any executable or script that:
+
+1. Reads configuration from environment variables (optional)
+2. Writes events to stdout
+
+### Environment variables
+
+sznuper sets the following environment variables when running a healthcheck:
+
+| Variable | Description |
+|---|---|
+| `HEALTHCHECK_TRIGGER` | Trigger type that fired the healthcheck (`interval`, `cron`, `watch`, `pipe`, `lifecycle`) |
+| `HEALTHCHECK_ALERT_NAME` | Name of the alert that owns this healthcheck |
+| `HEALTHCHECK_ARG_*` | Arguments from the alert config, uppercased and prefixed (e.g. `mount` becomes `HEALTHCHECK_ARG_MOUNT`) |
+
+Arguments are configured in your alert's `args` field:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: file://disk_usage
+    args:
+      mount: /
+      threshold_warn_percent: 80
+      threshold_crit_percent: 95
+```
+
+Under the hood, sznuper runs the healthcheck roughly like this:
+
+```sh
+HEALTHCHECK_TRIGGER=interval \
+HEALTHCHECK_ALERT_NAME=disk \
+HEALTHCHECK_ARG_MOUNT=/ \
+HEALTHCHECK_ARG_THRESHOLD_WARN_PERCENT=80.0 \
+HEALTHCHECK_ARG_THRESHOLD_CRIT_PERCENT=95.0 \
+  ./disk_usage
+```
+
+For `pipe` and `watch` triggers, stdin is also provided - pipe feeds the command's output, and watch feeds new file content.
+
+### Output format
+
+Each event block starts with the `--- event` token, followed by a dotenv-formatted body (parsed with [godotenv](https://github.com/joho/godotenv)). The `type` key is required. Keys are case-insensitive (normalized to lowercase internally).
+
+```
+--- event
+type=ok
+usage_percent=42
+total=50G
+```
+
+A single healthcheck can emit multiple events. sznuper processes them sequentially, one by one:
+
+```
+--- event
+type=login
+user=root
+host=203.0.113.5
+--- event
+type=failure
+user=admin
+host=198.51.100.12
+```
+
+Empty output (zero events) is valid. The exit code doesn't matter - sznuper only cares about stdout.
+
+## Remote healthchecks
+
+Healthchecks can be loaded from URLs. sznuper downloads the executable and caches it locally.
+
+The `sha256` field is the hash of the executable. It serves two purposes: it ensures the remote file hasn't changed since you pinned it, and it's used as the cache key so sznuper doesn't re-download on every run.
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/disk_usage
+    sha256: abc123...
+```
+
+Use `sznuper hash <file>` to get the hash of a healthcheck binary.
+
+To skip hash verification, explicitly set `sha256: false`:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/disk_usage
+    sha256: false
+```
