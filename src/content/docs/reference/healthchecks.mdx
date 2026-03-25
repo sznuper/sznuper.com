@@ -31,10 +31,49 @@ The official healthchecks are written in C and compiled with [Cosmopolitan Libc]
 
 ## Healthcheck interface
 
-A healthcheck is any executable that:
+A healthcheck is any executable or script that:
 
-1. Reads configuration from `HEALTHCHECK_ARG_*` environment variables
-2. Writes events to stdout in this format:
+1. Reads configuration from environment variables (optional)
+2. Writes events to stdout
+
+### Environment variables
+
+sznuper sets the following environment variables when running a healthcheck:
+
+| Variable | Description |
+|---|---|
+| `HEALTHCHECK_TRIGGER` | Trigger type that fired the healthcheck (`interval`, `cron`, `watch`, `pipe`, `lifecycle`) |
+| `HEALTHCHECK_ALERT_NAME` | Name of the alert that owns this healthcheck |
+| `HEALTHCHECK_ARG_*` | Arguments from the alert config, uppercased and prefixed (e.g. `mount` becomes `HEALTHCHECK_ARG_MOUNT`) |
+
+Arguments are configured in your alert's `args` field:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: file://disk_usage
+    args:
+      mount: /
+      threshold_warn_percent: 80
+      threshold_crit_percent: 95
+```
+
+Under the hood, sznuper runs the healthcheck roughly like this:
+
+```sh
+HEALTHCHECK_TRIGGER=interval \
+HEALTHCHECK_ALERT_NAME=disk \
+HEALTHCHECK_ARG_MOUNT=/ \
+HEALTHCHECK_ARG_THRESHOLD_WARN_PERCENT=80.0 \
+HEALTHCHECK_ARG_THRESHOLD_CRIT_PERCENT=95.0 \
+  ./disk_usage
+```
+
+For `pipe` and `watch` triggers, stdin is also provided - pipe feeds the command's output, and watch feeds new file content.
+
+### Output format
+
+Each event block starts with the `--- event` token, followed by a dotenv-formatted body (parsed with [godotenv](https://github.com/joho/godotenv)). The `type` key is required. Keys are case-insensitive (normalized to lowercase internally).
 
 ```
 --- event
@@ -43,9 +82,20 @@ usage_percent=42
 total=50G
 ```
 
-Each event block starts with `--- event` and contains `key=value` pairs. The `type` field is required. Empty output (zero events) is valid.
+A single healthcheck can emit multiple events. sznuper processes them sequentially, one by one:
 
-Exit code `0` means the healthcheck ran successfully. A non-zero exit code means the healthcheck itself is broken. sznuper logs the error but does not notify.
+```
+--- event
+type=login
+user=root
+host=203.0.113.5
+--- event
+type=failure
+user=admin
+host=198.51.100.12
+```
+
+Empty output (zero events) is valid. The exit code doesn't matter - sznuper only cares about stdout.
 
 ## Remote healthchecks
 
