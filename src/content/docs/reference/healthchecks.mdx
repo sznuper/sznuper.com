@@ -7,14 +7,12 @@ sznuper runs healthchecks as standalone executables. The official healthchecks a
 
 ## Official healthchecks
 
-| Healthcheck | Trigger | What it monitors |
-|---|---|---|
-| **disk_usage** | interval | Disk space for a mount point |
-| **cpu_usage** | interval | CPU utilization via `/proc/stat` sampling |
-| **memory_usage** | interval | Memory and swap via `/proc/meminfo` |
-| **ssh_journal** | pipe | SSH login, logout, and failure events from journald |
-
-When you run `sznuper init`, relevant healthchecks are automatically included based on your system. For example, `memory_usage` and `cpu_usage` are added when `/proc/meminfo` and `/proc/stat` exist, and `ssh_journal` when `journalctl` is available.
+| Healthcheck | Trigger | What it monitors | Added when |
+|---|---|---|---|
+| [**disk_usage**](https://github.com/sznuper/healthchecks/blob/main/src/disk_usage.c) | interval | Disk space for a mount point | Always |
+| [**cpu_usage**](https://github.com/sznuper/healthchecks/blob/main/src/cpu_usage.c) | interval | CPU utilization via `/proc/stat` sampling | `/proc/stat` exists |
+| [**memory_usage**](https://github.com/sznuper/healthchecks/blob/main/src/memory_usage.c) | interval | Memory and swap via `/proc/meminfo` | `/proc/meminfo` exists |
+| [**ssh_journal**](https://github.com/sznuper/healthchecks/blob/main/src/ssh_journal.c) | pipe | SSH login, logout, and failure events from journald | `journalctl` is available |
 
 ## Healthcheck interface
 
