@@ -4,25 +4,17 @@
 
 ## Purpose
 
-sznuper.com is the public website for the sznuper server monitoring tool. It serves two functions:
-
-1. **Landing page** at `/` — a minimal marketing page explaining what sznuper is, its value proposition, and how to install it
-2. **Documentation** at `/docs/` — contributor-friendly, markdown-based docs written from scratch (not reusing the existing LLM-oriented spec docs from the daemon repo)
+sznuper.com is the public website for the sznuper server monitoring tool. It serves as both a landing page and documentation site.
 
 ## Tech Stack
 
-- **Astro** — static site generator with islands architecture. Ships zero JS by default, but individual components can opt into interactivity using any framework (React, Svelte, etc.)
+- **Astro** — static site generator with islands architecture
 - **Starlight** — Astro's official docs plugin. Provides markdown-based documentation with sidebar navigation, built-in Pagefind search, dark/light theme, and "Edit this page" links
 - **Cloudflare Pages** — free-tier static hosting with Git integration, automatic PR preview deploys, custom domain support, and automatic HTTPS
 
 ## Architecture
 
-The landing page and docs coexist in one Astro project but are architecturally separate:
-
-- **Landing page** (`src/pages/index.astro`) — a standard Astro page with its own layout. It does not use Starlight's layout system, giving full design freedom. Components live in `src/components/Landing/`
-- **Docs** (`src/content/docs/`) — Starlight content collection. Markdown/MDX files here are automatically rendered with Starlight's docs layout at `/docs/`. Starlight handles the sidebar, search, navigation, and theming
-
-This separation means the landing page can evolve independently (animations, interactive demos, marketing sections) without being constrained by the docs framework.
+Pure Starlight site. The landing page uses Starlight's `template: splash` for a full-width hero layout. All other pages use the standard docs template with sidebar.
 
 ## General Project Structure
 
@@ -36,16 +28,14 @@ sznuper.com/
 │   ├── assets/                      # Processed assets (logo)
 │   ├── content/
 │   │   └── docs/                    # Starlight docs (markdown/MDX)
-│   │       ├── index.mdx
-│   │       ├── getting-started/
+│   │       ├── index.mdx            # Landing page (splash template)
+│   │       ├── getting-started.mdx
 │   │       ├── guides/
 │   │       └── reference/
-│   ├── pages/
-│   │   └── index.astro              # Landing page
-│   ├── components/
-│   │   └── Landing/                 # Landing page components
 │   └── styles/
 │       └── custom.css               # Starlight theme overrides
+├── specs/
+│   └── SPEC.md                      # This file
 ```
 
 ## Docs Sections
@@ -56,14 +46,10 @@ sznuper.com/
 
 Sidebar uses explicit ordering for "Getting Started" and autogenerate for "Guides" and "Reference" so new pages are picked up automatically. Each doc page includes an "Edit this page" link to the GitHub source for easy contributor PRs.
 
-## Landing Page
+## Plugins
 
-Minimal initially. Key sections:
-
-- Hero with tagline and description
-- Feature highlights
-- Install command (`curl | sh`)
-- Links to docs and GitHub
+- `starlight-contextual-menu` — "Copy as markdown" button on doc pages
+- `starlight-llms-txt` — generates `llms.txt` and `llms-full.txt` for LLM ingestion
 
 ## Deployment
 
