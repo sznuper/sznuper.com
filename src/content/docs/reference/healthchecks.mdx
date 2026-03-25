@@ -3,11 +3,26 @@ title: Healthchecks
 description: Overview of sznuper's official healthchecks.
 ---
 
-sznuper runs healthchecks as standalone executables. The official healthchecks are written in C and compiled with [Cosmopolitan Libc](https://justine.lol/cosmopolitan/) - single portable binaries that run on any Linux (amd64/arm64) with zero dependencies.
+Healthchecks are executables or scripts that sznuper runs to check the state of your server. Each healthcheck outputs events to stdout, and sznuper decides whether to send notifications based on those events. Healthchecks can be built-in, loaded from the filesystem, or downloaded from a URL.
+
+sznuper itself is a dumb runner - it doesn't know anything about what it's monitoring. All the logic lives in the healthchecks. You can write your own in any language you want, as long as it's executable and follows the output format.
+
+## Built-in healthchecks
+
+sznuper includes two built-in healthchecks that run without spawning a process:
+
+| Healthcheck | Description |
+|---|---|
+| `builtin://lifecycle` | Emits a synthetic event with a configurable `event` param. Used internally by the `lifecycle` trigger to fire `started` and `stopped` events. |
+| `builtin://ok` | Always emits a single `type=ok` event. Useful for testing notification delivery or as a cron trigger that always fires. |
 
 ## Official healthchecks
 
-| Healthcheck | Trigger | What it monitors | Added when |
+While sznuper itself doesn't ship with any monitoring logic, it provides a set of official healthchecks that cover common server monitoring needs. These are automatically bootstrapped when you run `sznuper init`, so things work out-of-the-box. You're free to not use them and write your own instead.
+
+The official healthchecks are written in C and compiled with [Cosmopolitan Libc](https://justine.lol/cosmopolitan/) - single portable binaries that run on any Linux (amd64/arm64) with zero dependencies.
+
+| Healthcheck | Trigger | What it monitors | Bootstrapped when |
 |---|---|---|---|
 | [**disk_usage**](https://github.com/sznuper/healthchecks/blob/main/src/disk_usage.c) | interval | Disk space for a mount point | Always |
 | [**cpu_usage**](https://github.com/sznuper/healthchecks/blob/main/src/cpu_usage.c) | interval | CPU utilization via `/proc/stat` sampling | `/proc/stat` exists |
@@ -32,18 +47,11 @@ Each event block starts with `--- event` and contains `key=value` pairs. The `ty
 
 Exit code `0` means the healthcheck ran successfully. A non-zero exit code means the healthcheck itself is broken. sznuper logs the error but does not notify.
 
-## Built-in healthchecks
-
-sznuper includes two built-in healthchecks that run without spawning a process:
-
-| Healthcheck | Description |
-|---|---|
-| `builtin://lifecycle` | Emits a synthetic event with a configurable `event` param. Used internally by the `lifecycle` trigger to fire `started` and `stopped` events. |
-| `builtin://ok` | Always emits a single `type=ok` event. Useful for testing notification delivery or as a cron trigger that always fires. |
-
 ## Remote healthchecks
 
-Healthchecks can be loaded from URLs. sznuper downloads, caches, and verifies them with SHA-256:
+Healthchecks can be loaded from URLs. sznuper downloads the executable and caches it locally.
+
+The `sha256` field is the hash of the executable. It serves two purposes: it ensures the remote file hasn't changed since you pinned it, and it's used as the cache key so sznuper doesn't re-download on every run.
 
 ```yaml
 alerts:
@@ -53,3 +61,12 @@ alerts:
 ```
 
 Use `sznuper hash <file>` to get the hash of a healthcheck binary.
+
+To skip hash verification, explicitly set `sha256: false`:
+
+```yaml
+alerts:
+  - name: disk
+    healthcheck: https://github.com/sznuper/healthchecks/releases/download/v0.4.0/disk_usage
+    sha256: false
+```
