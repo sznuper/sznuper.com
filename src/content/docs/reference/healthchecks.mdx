@@ -32,6 +32,15 @@ Each event block starts with `--- event` and contains `key=value` pairs. The `ty
 
 Exit code `0` means the healthcheck ran successfully. A non-zero exit code means the healthcheck itself is broken. sznuper logs the error but does not notify.
 
+## Built-in healthchecks
+
+sznuper includes two built-in healthchecks that run without spawning a process:
+
+| Healthcheck | Description |
+|---|---|
+| `builtin://lifecycle` | Emits a synthetic event with a configurable `event` param. Used internally by the `lifecycle` trigger to fire `started` and `stopped` events. |
+| `builtin://ok` | Always emits a single `type=ok` event. Useful for testing notification delivery or as a cron trigger that always fires. |
+
 ## Remote healthchecks
 
 Healthchecks can be loaded from URLs. sznuper downloads, caches, and verifies them with SHA-256:
