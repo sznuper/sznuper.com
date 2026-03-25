@@ -17,14 +17,10 @@ export default defineConfig({
 			},
 			sidebar: [
 				{
-					label: 'Getting Started',
+					label: 'Start Here',
 					items: [
-						{ label: 'Introduction', slug: 'getting-started' },
+						{ label: 'Getting Started', slug: 'getting-started' },
 					],
-				},
-				{
-					label: 'Guides',
-					autogenerate: { directory: 'guides' },
 				},
 				{
 					label: 'Reference',
