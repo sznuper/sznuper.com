@@ -1,9 +1,18 @@
 ---
 title: sznuper
+head:
+  - tag: title
+    content: sznuper - lightweight server monitor
 description: A lightweight server monitor that runs healthchecks and sends notifications. Discord, Slack, Telegram, Teams, and more.
 template: splash
+editUrl: false
+lastUpdated: false
 hero:
+  title: sznuper
   tagline: A lightweight server monitor that runs healthchecks and sends notifications. Discord, Slack, Telegram, Teams, and more.
+  image:
+    alt: sznuper logo
+    file: ../../assets/logo.svg
   actions:
     - text: Get Started
       link: /getting-started/
@@ -13,3 +22,20 @@ hero:
       icon: external
       variant: minimal
 ---
+
+import { CardGrid, Card } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+    <Card title="Just a binary" icon="rocket">
+        No runtime, no database, no systemd required. Runs on any Linux. Install with a single curl command.
+    </Card>
+    <Card title="Unified notifications" icon="comment-alt">
+        One config for Discord, Slack, Telegram, Teams, email, webhooks, and more. Powered by [Shoutrrr](https://shoutrrr.nickfedor.com).
+    </Card>
+    <Card title="Write your own healthchecks" icon="puzzle">
+        sznuper runs any executable or script. Use the official healthchecks or write your own in any language.
+    </Card>
+    <Card title="Flexible triggers" icon="setting">
+        Interval, cron, file watch, and pipe triggers. A single alert can run on multiple triggers at once.
+    </Card>
+</CardGrid>
