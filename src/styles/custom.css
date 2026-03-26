@@ -1,6 +1,35 @@
 /* Starlight theme overrides */
 
+/* Dark mode colors. */
 :root {
 	--sl-content-width: 55rem;
 	--sl-sidebar-width: 15rem;
+	--sl-nav-gap: 0.3rem;
+	--sl-color-accent-low: #371c05;
+	--sl-color-accent: #9e5300;
+	--sl-color-accent-high: #e5c0a7;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #f2ece9;
+	--sl-color-gray-2: #c7c0bd;
+	--sl-color-gray-3: #958982;
+	--sl-color-gray-4: #61554f;
+	--sl-color-gray-5: #403630;
+	--sl-color-gray-6: #2e241f;
+	--sl-color-black: #1c1715;
+}
+
+/* Light mode colors. */
+:root[data-theme='light'] {
+	--sl-color-accent-low: #ecd1bd;
+	--sl-color-accent: #a15500;
+	--sl-color-accent-high: #4e2600;
+	--sl-color-white: #1c1715;
+	--sl-color-gray-1: #2e241f;
+	--sl-color-gray-2: #403630;
+	--sl-color-gray-3: #61554f;
+	--sl-color-gray-4: #958982;
+	--sl-color-gray-5: #c7c0bd;
+	--sl-color-gray-6: #f2ece9;
+	--sl-color-gray-7: #f8f6f4;
+	--sl-color-black: #ffffff;
 }
