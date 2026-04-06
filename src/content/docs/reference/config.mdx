@@ -131,7 +131,20 @@ Available trigger types:
 | `cron` | Cron expression, 5 or 6 fields (e.g. `"0 9 * * *"`) |
 | `watch` | Run when a file changes (e.g. `/var/log/app.log`) |
 | `pipe` | Continuous shell command whose stdout is fed to the healthcheck (e.g. `"tail -F /var/log/app.log"`) |
-| `lifecycle` | Special trigger that fires on daemon start and stop. Only works with the `builtin://lifecycle` healthcheck. |
+| `lifecycle` | Special trigger that fires on daemon start, stop, and config reload. Only works with the `builtin://lifecycle` healthcheck. |
+
+#### Lifecycle event types
+
+The `builtin://lifecycle` healthcheck emits a single event whose `type` field indicates what happened:
+
+| Event type | When it fires |
+|---|---|
+| `started` | Daemon starts |
+| `stopped` | Daemon stops |
+| `reload_success` | Config reloaded successfully via SIGHUP |
+| `reload_failure` | Config reload failed validation (daemon keeps running with previous config) |
+
+You can use `events.override` to customize behavior per event type, for example routing `reload_failure` to a higher-priority channel.
 
 ### Templates
 

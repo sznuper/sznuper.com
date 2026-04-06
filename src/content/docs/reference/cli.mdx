@@ -20,6 +20,16 @@ Start the daemon. Runs healthchecks on their configured schedules and sends noti
 |---|---|
 | `--dry-run` | Simulate alerts without sending notifications |
 
+**Config reload:** Send `SIGHUP` to the running daemon to reload the config file without restarting. The new config is validated before applying -- if validation fails, the daemon keeps running with the previous config and fires a `reload_failure` lifecycle event.
+
+```sh
+# Manual:
+kill -HUP $(pgrep sznuper)
+
+# With systemd:
+sudo systemctl reload sznuper
+```
+
 ### `sznuper init`
 
 Generate a config file. Launches an interactive TUI by default.

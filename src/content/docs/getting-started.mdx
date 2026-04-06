@@ -72,6 +72,14 @@ The install script already enables the systemd service, so if you had a config b
 sudo systemctl restart sznuper
 ```
 
+To reload the config without restarting the daemon:
+
+```sh
+sudo systemctl reload sznuper
+```
+
+This validates the new config first. If invalid, the daemon keeps running with the previous config.
+
 Or run directly without systemd:
 
 ```sh
