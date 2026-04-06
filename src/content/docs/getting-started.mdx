@@ -54,12 +54,12 @@ Generate a config file interactively:
 sznuper init
 ```
 
-This walks you through adding notification services and generates a config with sensible defaults, including healthchecks for disk usage, CPU, memory, and SSH events (where supported).
+This walks you through adding notification channels and generates a config with sensible defaults, including healthchecks for disk usage, CPU, memory, and SSH events (where supported).
 
-To skip the TUI and add services directly:
+To skip the TUI and add channels directly:
 
 ```sh
-sznuper init --add-service "telegram:telegram://${TELEGRAM_TOKEN}@telegram?chats=${CHAT_ID}"
+sznuper init --add-channel "telegram:telegram://${TELEGRAM_TOKEN}@telegram?chats=${CHAT_ID}"
 ```
 
 Use `--from` to base your config on a URL or local file, and `--force` to overwrite an existing config.
@@ -71,6 +71,14 @@ The install script already enables the systemd service, so if you had a config b
 ```sh
 sudo systemctl restart sznuper
 ```
+
+To reload the config without restarting the daemon:
+
+```sh
+sudo systemctl reload sznuper
+```
+
+This validates the new config first. If invalid, the daemon keeps running with the previous config.
 
 Or run directly without systemd:
 

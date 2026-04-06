@@ -1,22 +1,22 @@
 ---
 title: Notifications
-description: Notification services supported by sznuper.
+description: Notification channels supported by sznuper.
 ---
 
 sznuper uses [Shoutrrr v0.14.1](https://shoutrrr.nickfedor.com/v0.14.1/services/overview/) for notifications. Any service supported by Shoutrrr works with sznuper. Configure it with a Shoutrrr URL in your config file:
 
 ```yaml
-services:
-  my-service:
+channels:
+  my-channel:
     url: <shoutrrr-url>
 ```
 
 See the [Shoutrrr services documentation](https://shoutrrr.nickfedor.com/v0.14.1/services/overview/) for the full list of supported services and their URL formats.
 
-Environment variables are supported in service URLs:
+Environment variables are supported in channel URLs:
 
 ```yaml
-services:
+channels:
   telegram:
     url: telegram://${TELEGRAM_TOKEN}@telegram
     params:

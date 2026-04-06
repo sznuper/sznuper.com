@@ -13,7 +13,7 @@ sznuper includes two built-in healthchecks that run without spawning a process:
 
 | Healthcheck | Description |
 |---|---|
-| `builtin://lifecycle` | Emits a synthetic event with a configurable `event` param. Used internally by the `lifecycle` trigger to fire `started` and `stopped` events. |
+| `builtin://lifecycle` | Emits a synthetic event with a configurable `event` param. Used internally by the `lifecycle` trigger to fire `started`, `stopped`, `reload_success`, and `reload_failure` events. |
 | `builtin://ok` | Always emits a single `type=ok` event. Useful for testing notification delivery or as a cron trigger that always fires. |
 
 ## Official healthchecks

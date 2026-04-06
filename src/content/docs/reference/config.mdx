@@ -41,14 +41,14 @@ globals:
   environment: production
 ```
 
-## `services`
+## `channels`
 
-Notification services using [Shoutrrr](https://shoutrrr.nickfedor.com/v0.14.1/services/overview/) URLs. Each service has a name, a URL, and optional default params.
+Notification channels using [Shoutrrr](https://shoutrrr.nickfedor.com/v0.14.1/services/overview/) URLs. Each channel has a name, a URL, and optional default params.
 
-The service name is arbitrary - it's just a label you use to reference it later in alerts. You can have multiple services of the same type with different names:
+The channel name is arbitrary - it's just a label you use to reference it later in alerts. You can have multiple channels of the same type with different names:
 
 ```yaml
-services:
+channels:
   telegram-ops:
     url: telegram://${TELEGRAM_TOKEN}@telegram
     params:
@@ -107,7 +107,7 @@ alerts:
 | `side_effects` | no | Shell commands to run after event processing |
 | `template` | yes | Go template for the notification message (see below) |
 | `cooldown` | no | Suppress repeated notifications (e.g. `"5m"`, `"1h"`) |
-| `notify` | yes | List of services to notify |
+| `notify` | yes | List of channels to notify |
 | `events` | no | Per-event-type configuration (see below) |
 
 ### Triggers
@@ -131,7 +131,20 @@ Available trigger types:
 | `cron` | Cron expression, 5 or 6 fields (e.g. `"0 9 * * *"`) |
 | `watch` | Run when a file changes (e.g. `/var/log/app.log`) |
 | `pipe` | Continuous shell command whose stdout is fed to the healthcheck (e.g. `"tail -F /var/log/app.log"`) |
-| `lifecycle` | Special trigger that fires on daemon start and stop. Only works with the `builtin://lifecycle` healthcheck. |
+| `lifecycle` | Special trigger that fires on daemon start, stop, and config reload. Only works with the `builtin://lifecycle` healthcheck. |
+
+#### Lifecycle event types
+
+The `builtin://lifecycle` healthcheck emits a single event whose `type` field indicates what happened:
+
+| Event type | When it fires |
+|---|---|
+| `started` | Daemon starts |
+| `stopped` | Daemon stops |
+| `reload_success` | Config reloaded successfully via SIGHUP |
+| `reload_failure` | Config reload failed validation (daemon keeps running with previous config) |
+
+You can use `events.override` to customize behavior per event type, for example routing `reload_failure` to a higher-priority channel.
 
 ### Templates
 
@@ -154,7 +167,7 @@ template: |-
 
 ### Notify targets
 
-A list of services to notify. In the simplest form, just the service name:
+A list of channels to notify. In the simplest form, just the channel name:
 
 ```yaml
 notify:
@@ -162,7 +175,7 @@ notify:
   - discord
 ```
 
-You can also override params per notification. The params are merged on top of the service's base params - any key you set here wins over the service default. Params are passed as query parameters in the Shoutrrr URL.
+You can also override params per notification. The params are merged on top of the channel's base params - any key you set here wins over the channel default. Params are passed as query parameters in the Shoutrrr URL.
 
 ```yaml
 notify:
@@ -231,7 +244,7 @@ options:
 globals:
   hostname: my-server
 
-services:
+channels:
   telegram:
     url: telegram://${TELEGRAM_TOKEN}@telegram
     params:
